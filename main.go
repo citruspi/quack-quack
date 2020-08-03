@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"net/http"
 	"os"
@@ -8,6 +9,10 @@ import (
 
 	log "github.com/sirupsen/logrus"
 )
+
+type SecurityCredentialsResponse struct {
+	Code string
+}
 
 type Config struct {
 	bindAddr string
@@ -40,20 +45,43 @@ func handleHttpRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := ""
-	requestedRole := strings.TrimPrefix(r.URL.Path, "/latest/meta-data/iam/security-credentials")
+	requestedRole := strings.TrimPrefix(strings.TrimPrefix(r.URL.Path, "/latest/meta-data/iam/security-credentials"), "/")
 
-	if requestedRole == "" || requestedRole == "/" {
-		resp = config.vaultRoleName
+	if requestedRole == "" {
+		_, err := w.Write([]byte(config.vaultRoleName))
+
+		if err != nil {
+			log.Error(err)
+		}
+
+		return
 	}
 
-	_, err := w.Write([]byte(resp))
+	if requestedRole != config.vaultRoleName {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	resp := &SecurityCredentialsResponse{Code: "Success"}
+
+	encoded, err := json.Marshal(resp)
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("failed to encode JSON response")
+
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	_, err = w.Write(encoded)
 
 	if err != nil {
 		log.Error(err)
 	}
 }
-
 
 func main() {
 	config = &Config{}
