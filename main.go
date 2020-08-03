@@ -10,6 +10,7 @@ import (
 )
 
 type Config struct {
+	bindAddr string
 	vaultRoleName string
 }
 
@@ -58,13 +59,14 @@ func main() {
 	config = &Config{}
 
 	flag.StringVar(&config.vaultRoleName, "role", "", "Vault role name")
+	flag.StringVar(&config.bindAddr, "bind", "127.0.0.1:3456", "Bind address")
 
 	flag.Parse()
 	config.Validate()
 
 	http.HandleFunc("/", handleHttpRequest)
 
-	err := http.ListenAndServe("127.0.0.1:3456", nil)
+	err := http.ListenAndServe(config.bindAddr, nil)
 
 	if err != nil {
 		log.Error(err)
