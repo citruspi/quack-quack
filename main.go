@@ -29,6 +29,11 @@ func init() {
 }
 
 func handleHttpRequest(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "text/plain")
+	w.Header().Add("Accept-Ranges", "none")
+	w.Header().Add("Server", "EC2ws")
+	w.Header().Add("Connection", "close")
+
 	if !strings.HasPrefix(r.URL.Path, "/latest/meta-data/iam/security-credentials") {
 		w.WriteHeader(http.StatusNotFound)
 		return
