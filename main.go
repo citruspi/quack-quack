@@ -8,13 +8,15 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
 
 type VaultCredentialsResponse struct {
-	LeaseId string `json:"lease_id"`
-	Data    struct {
+	LeaseId       string `json:"lease_id"`
+	LeaseDuration int    `json:"lease_duration"`
+	Data          struct {
 		AccessKey     string  `json:"access_key"`
 		SecretKey     string  `json:"secret_key"`
 		SecurityToken *string `json:"security_token"`
@@ -27,6 +29,8 @@ type SecurityCredentialsResponse struct {
 	AccessKeyId     string
 	SecretAccessKey string
 	Token           *string
+	LastUpdated     string
+	Expiration      string
 }
 
 type Config struct {
@@ -52,6 +56,10 @@ func (c *Config) Validate() {
 
 var (
 	config *Config
+)
+
+const (
+	AwsTimeFormat = "2006-01-02T15:04:05Z"
 )
 
 func init() {
@@ -91,12 +99,16 @@ func loadCredentialsFromVault() (*SecurityCredentialsResponse, error) {
 
 	log.WithField("lease_id", credentials.LeaseId).Info("leased AWS credentials from Vault")
 
+	now := time.Now()
+
 	return &SecurityCredentialsResponse{
 		Code:            "Success",
 		Type:            "AWS-HMAC",
 		AccessKeyId:     credentials.Data.AccessKey,
 		SecretAccessKey: credentials.Data.SecretKey,
 		Token:           credentials.Data.SecurityToken,
+		LastUpdated:     now.Format(AwsTimeFormat),
+		Expiration:      now.Add(time.Second * time.Duration(credentials.LeaseDuration)).Format(AwsTimeFormat),
 	}, nil
 }
 
