@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -14,8 +15,9 @@ import (
 )
 
 type VaultCredentialsResponse struct {
-	LeaseId       string `json:"lease_id"`
-	LeaseDuration int    `json:"lease_duration"`
+	Errors        []string `json:"errors"`
+	LeaseId       string   `json:"lease_id"`
+	LeaseDuration int      `json:"lease_duration"`
 	Data          struct {
 		AccessKey     string  `json:"access_key"`
 		SecretKey     string  `json:"secret_key"`
@@ -95,6 +97,14 @@ func loadCredentialsFromVault() (*SecurityCredentialsResponse, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	if len(credentials.Errors) > 0 {
+		for _, e := range credentials.Errors {
+			log.WithField("error", e).Error("Vault API error")
+		}
+
+		return nil, errors.New("Vault API error")
 	}
 
 	log.WithField("lease_id", credentials.LeaseId).Info("leased AWS credentials from Vault")
