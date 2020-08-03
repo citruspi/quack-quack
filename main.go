@@ -1,11 +1,26 @@
 package main
 
 import (
+	"flag"
 	"net/http"
 	"os"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+)
+
+type Config struct {
+	vaultRoleName string
+}
+
+func (c *Config) Validate() {
+	if c.vaultRoleName == "" {
+		log.Fatal("Vault role name is empty")
+	}
+}
+
+var (
+	config *Config
 )
 
 func init() {
@@ -16,9 +31,17 @@ func init() {
 func handleHttpRequest(w http.ResponseWriter, r *http.Request) {
 	if !strings.HasPrefix(r.URL.Path, "/latest/meta-data/iam/security-credentials") {
 		w.WriteHeader(http.StatusNotFound)
+		return
 	}
 
-	_, err := w.Write([]byte("hello world"))
+	resp := ""
+	requestedRole := strings.TrimPrefix(r.URL.Path, "/latest/meta-data/iam/security-credentials")
+
+	if requestedRole == "" || requestedRole == "/" {
+		resp = config.vaultRoleName
+	}
+
+	_, err := w.Write([]byte(resp))
 
 	if err != nil {
 		log.Error(err)
@@ -27,6 +50,13 @@ func handleHttpRequest(w http.ResponseWriter, r *http.Request) {
 
 
 func main() {
+	config = &Config{}
+
+	flag.StringVar(&config.vaultRoleName, "role", "", "Vault role name")
+
+	flag.Parse()
+	config.Validate()
+
 	http.HandleFunc("/", handleHttpRequest)
 
 	err := http.ListenAndServe("127.0.0.1:3456", nil)
