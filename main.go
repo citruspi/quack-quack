@@ -109,7 +109,7 @@ func loadCredentialsFromVault() (*SecurityCredentialsResponse, error) {
 
 	log.WithField("lease_id", credentials.LeaseId).Info("leased AWS credentials from Vault")
 
-	now := time.Now()
+	now := time.Now().In(time.UTC)
 
 	return &SecurityCredentialsResponse{
 		Code:            "Success",
