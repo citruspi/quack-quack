@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -65,8 +64,9 @@ const (
 )
 
 func init() {
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.InfoLevel)
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+	})
 }
 
 func loadCredentialsFromVault() (*SecurityCredentialsResponse, error) {
