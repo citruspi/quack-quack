@@ -46,12 +46,22 @@ func (c *Config) Validate() {
 		log.Fatal("Vault role name is empty")
 	}
 
+	if c.vaultServer == "" {
+		log.Fatal("Vault server address is empty")
+	}
+
 	if c.vaultToken == "" {
 		log.Fatal("Vault access token is empty")
 	}
 
-	if c.vaultServer == "" {
-		log.Fatal("Vault server address is empty")
+	if !strings.HasPrefix(c.vaultToken, "s.") {
+		raw, err := ioutil.ReadFile(c.vaultToken)
+
+		if err != nil {
+			log.WithError(err).Fatal("failed to read vault token file")
+		}
+
+		c.vaultToken = string(raw)
 	}
 }
 
@@ -187,7 +197,7 @@ func main() {
 	flag.StringVar(&config.bindAddr, "bind", "127.0.0.1:3456", "Bind address")
 	flag.StringVar(&config.vaultRoleName, "role", "", "Vault role name")
 	flag.StringVar(&config.vaultServer, "vault", "", "Vault server address")
-	flag.StringVar(&config.vaultToken, "token", "", "Vault access token")
+	flag.StringVar(&config.vaultToken, "token", "", "Vault access token (or path to it)")
 
 	flag.Parse()
 	config.Validate()
