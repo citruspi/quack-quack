@@ -1,0 +1,20 @@
+image: img.doom.fm/build/golang:latest-1.14.5-buster
+
+stages:
+  - test
+  - compile
+  - package
+
+include:
+  - project: build/gitlab
+    ref: master
+    file: golang/test.yml
+  - project: build/gitlab
+    ref: master
+    file: golang/compile.yml
+  - project: build/gitlab
+    ref: master
+    file: golang/pkg-tarballs.yml
+  - project: build/gitlab
+    ref: master
+    file: golang/pkg-native.yml
