@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -66,7 +67,8 @@ func (c *Config) Validate() {
 }
 
 var (
-	config *Config
+	config  *Config
+	version = "unset"
 )
 
 const (
@@ -194,12 +196,21 @@ func handleHttpRequest(w http.ResponseWriter, r *http.Request) {
 func main() {
 	config = &Config{}
 
+	var showVersion bool
+
 	flag.StringVar(&config.bindAddr, "bind", "127.0.0.1:3456", "Bind address")
 	flag.StringVar(&config.vaultRoleName, "role", "", "Vault role name")
 	flag.StringVar(&config.vaultServer, "vault", "", "Vault server address")
 	flag.StringVar(&config.vaultToken, "token", "", "Vault access token (or path to it)")
+	flag.BoolVar(&showVersion, "version", false, "Show version and exit")
 
 	flag.Parse()
+
+	if showVersion {
+		fmt.Println(version)
+		os.Exit(0)
+	}
+
 	config.Validate()
 
 	http.HandleFunc("/", handleHttpRequest)
